@@ -1,3 +1,6 @@
+import java.util.HashMap;
+import java.util.Map;
+
 abstract class Room {
 
     private int beds;
@@ -68,29 +71,62 @@ class SuiteRoom extends Room {
     }
 }
 
+/* Centralized Inventory Management */
+class RoomInventory {
+
+    private Map<String, Integer> inventory = new HashMap<>();
+
+    public void registerRoom(String roomType, int count) {
+        inventory.put(roomType, count);
+    }
+
+    public int getAvailability(String roomType) {
+        return inventory.getOrDefault(roomType, 0);
+    }
+
+    public void updateAvailability(String roomType, int change) {
+        int current = inventory.getOrDefault(roomType, 0);
+        inventory.put(roomType, current + change);
+    }
+
+    public void displayInventory() {
+        System.out.println("\n=== Current Room Inventory ===");
+        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
+            System.out.println(entry.getKey() + " Available: " + entry.getValue());
+        }
+    }
+}
+
 public class book_my_stay {
 
     public static void main(String[] args) {
 
-        int singleRoomAvailable = 5;
-        int doubleRoomAvailable = 3;
-        int suiteRoomAvailable = 2;
+        // Create room objects
+        Room single = new SingleRoom();
+        Room dbl = new DoubleRoom();
+        Room suite = new SuiteRoom();
 
-        Room room1 = new SingleRoom();
-        Room room2 = new DoubleRoom();
-        Room room3 = new SuiteRoom();
+        // Initialize inventory
+        RoomInventory inventory = new RoomInventory();
 
-        System.out.println("=== Hotel Room Information ===\n");
+        // Register room types
+        inventory.registerRoom(single.getRoomType(), 5);
+        inventory.registerRoom(dbl.getRoomType(), 3);
+        inventory.registerRoom(suite.getRoomType(), 2);
 
-        room1.displayRoomDetails();
-        System.out.println("Available: " + singleRoomAvailable);
-        System.out.println();
+        // Display room details
+        System.out.println("=== Room Information ===\n");
+        single.displayRoomDetails();
+        dbl.displayRoomDetails();
+        suite.displayRoomDetails();
 
-        room2.displayRoomDetails();
-        System.out.println("Available: " + doubleRoomAvailable);
-        System.out.println();
+        // Display centralized inventory
+        inventory.displayInventory();
 
-        room3.displayRoomDetails();
-        System.out.println("Available: " + suiteRoomAvailable);
+        // Simulate booking (update availability)
+        System.out.println("\nBooking one Single Room...");
+        inventory.updateAvailability("Single Room", -1);
+
+        inventory.displayInventory();
     }
 }

@@ -1,8 +1,8 @@
 # **
 *=================================================================================
-*Main Class-Book-MY-STAY-APP UC2
+*Main Class-Book-MY-STAY-APP UC3
 *=================================================================================
-USE CASE 2:Basic room type and availability
+USE CASE 3:Central room inventory
 
 DESCRIPTION:
 ->create an abstract class room
