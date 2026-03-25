@@ -1,53 +1,61 @@
 import java.util.*;
 
-// Represents an individual Add-On Service
-class Service {
-    String name;
-    double cost;
+// Represents the completed record of a booking
+class Reservation {
+    String guestName;
+    String roomType;
+    String roomId;
 
-    public Service(String name, double cost) {
-        this.name = name;
-        this.cost = cost;
+    public Reservation(String guestName, String roomType, String roomId) {
+        this.guestName = guestName;
+        this.roomType = roomType;
+        this.roomId = roomId;
+    }
+
+    @Override
+    public String toString() {
+        return "Guest: " + guestName + ", Room Type: " + roomType + " (ID: " + roomId + ")";
     }
 }
 
 public class book_my_stay {
-    // Use Case 7: Mapping Reservation ID (e.g., "Single-1") to a LIST of Services
-    private static Map<String, List<Service>> reservationAddOns = new HashMap<>();
+    // Use Case 8: The Historical Ledger (Ordered Storage)
+    private static List<Reservation> bookingHistory = new ArrayList<>();
 
     public static void main(String[] args) {
-        System.out.println("--- Use Case 7: Add-On Service Selection ---");
+        // 1. Simulate the Flow: Confirmation -> History
+        confirmAndStore("Abhi", "Single", "Single-1");
+        confirmAndStore("Subha", "Double", "Double-1");
+        confirmAndStore("Vanmathi", "Suite", "Suite-1");
 
-        // 1. Simulate an existing Reservation ID from Use Case 6
-        String resId = "Single-1";
-
-        // 2. Guest selects multiple services
-        addServiceToReservation(resId, new Service("Breakfast Buffet", 500.0));
-        addServiceToReservation(resId, new Service("Airport Pickup", 1000.0));
-
-        // 3. Calculate and Display
-        displayAddOnSummary(resId);
+        // 2. Admin Request: Generate Report
+        generateBookingReport();
     }
 
-    public static void addServiceToReservation(String resId, Service service) {
-        // Map and List Combination: computeIfAbsent creates the list if it doesn't exist
-        reservationAddOns.computeIfAbsent(resId, k -> new ArrayList<>()).add(service);
-        System.out.println("Service Added: " + service.name + " to " + resId);
+    // This method simulates the transition from Use Case 6 to Use Case 8
+    public static void confirmAndStore(String name, String type, String id) {
+        // Create the historical record
+        Reservation record = new Reservation(name, type, id);
+
+        // Add to history list (Preserves insertion/chronological order)
+        bookingHistory.add(record);
+
+        System.out.println("System: Reservation stored in history for " + name);
     }
 
-    public static void displayAddOnSummary(String resId) {
-        List<Service> services = reservationAddOns.get(resId);
-        double totalCost = 0;
+    // Reporting Service logic
+    public static void generateBookingReport() {
+        System.out.println("\n--- Booking History and Reporting ---");
+        System.out.println("Booking History Report");
 
-        System.out.println("\n--- Add-On Service Selection ---");
-        System.out.println("Reservation ID: " + resId);
-
-        if (services != null) {
-            for (Service s : services) {
-                totalCost += s.cost;
+        if (bookingHistory.isEmpty()) {
+            System.out.println("No records found.");
+        } else {
+            // Iterating through the list provides the report in order of confirmation
+            for (Reservation res : bookingHistory) {
+                // Formatting matches your specific requirement
+                System.out.println("Guest: " + res.guestName + ", Room Type: " + res.roomType);
             }
         }
-
-        System.out.println("Total Add-On Cost: " + totalCost);
     }
 }
