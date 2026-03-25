@@ -1,46 +1,67 @@
 import java.util.*;
 
 public class book_my_stay {
-    // Inventory state
+    // Shared Mutable State
     private static Map<String, Integer> inventory = new HashMap<>();
-    // Use Case 10: Stack to track Room IDs for LIFO rollback
-    private static Stack<String> allocationStack = new Stack<>();
+    private static int roomCounter = 1;
 
     public static void main(String[] args) {
-        // Initializing state for the example
+        // Initialize Inventory
         inventory.put("Single", 5);
+        inventory.put("Double", 3);
+        inventory.put("Suite", 2);
 
-        // Simulating a confirmed booking (from Use Case 6)
-        String roomToCancel = "Single-1";
-        allocationStack.push(roomToCancel); // Tracked for rollback
-        inventory.put("Single", 4); // Decremented during booking
+        System.out.println("Concurrent Booking Simulation");
 
-        System.out.println("Booking Cancellation");
+        // Define guests and their requested room types
+        String[][] requests = {
+                {"Abhi", "Single"},
+                {"Subha", "Single"},
+                {"Vanmathi", "Double"},
+                {"Kural", "Suite"}
+        };
 
-        // Perform Cancellation
-        cancelBooking("Single");
-    }
+        // Create and start threads for each guest
+        Thread[] threads = new Thread[requests.length];
+        for (int i = 0; i < requests.length; i++) {
+            final String name = requests[i][0];
+            final String type = requests[i][1];
 
-    public static void cancelBooking(String roomType) {
-        // 1. Validate: Ensure there is something to cancel
-        if (allocationStack.isEmpty()) {
-            System.out.println("Error: No active bookings found to cancel.");
-            return;
+            threads[i] = new Thread(() -> processBooking(name, type));
+            threads[i].start();
         }
 
-        // 2. LIFO Rollback: Pop the most recent Room ID
-        String releasedID = allocationStack.pop();
+        // Wait for all threads to finish (Join)
+        for (Thread t : threads) {
+            try { t.join(); } catch (InterruptedException e) { e.printStackTrace(); }
+        }
 
-        // 3. Inventory Restoration: Increment immediately
-        if (inventory.containsKey(roomType)) {
-            int currentStock = inventory.get(roomType);
-            inventory.put(roomType, currentStock + 1);
+        // Final Report
+        System.out.println("\nRemaining Inventory:");
+        inventory.forEach((type, count) -> System.out.println(type + ": " + count));
+    }
 
-            // 4. Confirmation Message
-            System.out.println("Booking cancelled successfully. Inventory restored for room type: " + roomType);
-            System.out.println("\nRollback History (Most Recent First):");
-            System.out.println("Released Reservation ID: " + releasedID);
-            System.out.println("Updated " + roomType + " Room Availability: " + inventory.get(roomType));
+    /**
+     * The Critical Section:
+     * The 'synchronized' keyword ensures only one thread enters this method
+     * at a time, preventing Race Conditions.
+     */
+    public static synchronized void processBooking(String name, String type) {
+        int available = inventory.getOrDefault(type, 0);
+
+        if (available > 0) {
+            // Simulate processing time
+            try { Thread.sleep(10); } catch (InterruptedException e) {}
+
+            // Update Inventory
+            inventory.put(type, available - 1);
+
+            // Assign Unique ID (Safe because of synchronization)
+            String roomID = type + "-" + (roomCounter++);
+
+            System.out.println("Booking confirmed for Guest: " + name + ", Room ID: " + roomID);
+        } else {
+            System.out.println("Booking failed for Guest: " + name + " (Sold Out)");
         }
     }
 }
