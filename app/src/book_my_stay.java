@@ -1,56 +1,46 @@
 import java.util.*;
 
-// 1. Custom Exception for domain-specific errors
-class InvalidBookingException extends Exception {
-    public InvalidBookingException(String message) {
-        super(message);
-    }
-}
-
 public class book_my_stay {
-    // Valid room types defined by the business
-    private static final Set<String> VALID_ROOM_TYPES = Set.of("Single", "Double", "Suite");
+    // Inventory state
+    private static Map<String, Integer> inventory = new HashMap<>();
+    // Use Case 10: Stack to track Room IDs for LIFO rollback
+    private static Stack<String> allocationStack = new Stack<>();
 
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+        // Initializing state for the example
+        inventory.put("Single", 5);
 
-        System.out.println("--- Use Case 9: Booking Validation ---");
+        // Simulating a confirmed booking (from Use Case 6)
+        String roomToCancel = "Single-1";
+        allocationStack.push(roomToCancel); // Tracked for rollback
+        inventory.put("Single", 4); // Decremented during booking
 
-        System.out.print("Enter guest name: ");
-        String name = scanner.nextLine();
+        System.out.println("Booking Cancellation");
 
-        System.out.print("Enter room type (Single/Double/Suite): ");
-        String type = scanner.nextLine();
-
-        try {
-            // 2. Fail-Fast Validation
-            validateRequest(name, type);
-
-            // If validation passes, proceed to allocation (simulated)
-            System.out.println("Booking confirmed for Guest: " + name + ", Room Type: " + type);
-
-        } catch (InvalidBookingException e) {
-            // 3. Graceful Failure Handling
-            System.err.println("Booking failed: " + e.getMessage());
-        } finally {
-            scanner.close();
-            System.out.println("\nSystem remains stable and ready for the next request.");
-        }
+        // Perform Cancellation
+        cancelBooking("Single");
     }
 
-    /**
-     * Guarding System State: This method ensures input is valid
-     * BEFORE any inventory or allocation logic is triggered.
-     */
-    public static void validateRequest(String name, String type) throws InvalidBookingException {
-        // Check for empty name
-        if (name == null || name.trim().isEmpty()) {
-            throw new InvalidBookingException("Guest name cannot be empty.");
+    public static void cancelBooking(String roomType) {
+        // 1. Validate: Ensure there is something to cancel
+        if (allocationStack.isEmpty()) {
+            System.out.println("Error: No active bookings found to cancel.");
+            return;
         }
 
-        // Check for invalid room type (Case-Sensitive check)
-        if (!VALID_ROOM_TYPES.contains(type)) {
-            throw new InvalidBookingException("Invalid room type selected.");
+        // 2. LIFO Rollback: Pop the most recent Room ID
+        String releasedID = allocationStack.pop();
+
+        // 3. Inventory Restoration: Increment immediately
+        if (inventory.containsKey(roomType)) {
+            int currentStock = inventory.get(roomType);
+            inventory.put(roomType, currentStock + 1);
+
+            // 4. Confirmation Message
+            System.out.println("Booking cancelled successfully. Inventory restored for room type: " + roomType);
+            System.out.println("\nRollback History (Most Recent First):");
+            System.out.println("Released Reservation ID: " + releasedID);
+            System.out.println("Updated " + roomType + " Room Availability: " + inventory.get(roomType));
         }
     }
 }
