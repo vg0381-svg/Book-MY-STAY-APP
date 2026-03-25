@@ -1,67 +1,67 @@
+import java.io.*;
 import java.util.*;
 
+// To be persisted, classes MUST implement Serializable
+class InventoryData implements Serializable {
+    private static final long serialVersionUID = 1L; // Ensures version compatibility
+    Map<String, Integer> rooms;
+
+    public InventoryData(Map<String, Integer> rooms) {
+        this.rooms = rooms;
+    }
+}
+
 public class book_my_stay {
-    // Shared Mutable State
-    private static Map<String, Integer> inventory = new HashMap<>();
-    private static int roomCounter = 1;
+    private static final String FILE_NAME = "inventory_state.dat";
+    private static Map<String, Integer> currentInventory = new HashMap<>();
 
     public static void main(String[] args) {
-        // Initialize Inventory
-        inventory.put("Single", 5);
-        inventory.put("Double", 3);
-        inventory.put("Suite", 2);
+        System.out.println("System Recovery");
 
-        System.out.println("Concurrent Booking Simulation");
+        // 1. Startup: Attempt to Restore State
+        loadState();
 
-        // Define guests and their requested room types
-        String[][] requests = {
-                {"Abhi", "Single"},
-                {"Subha", "Single"},
-                {"Vanmathi", "Double"},
-                {"Kural", "Suite"}
-        };
+        // 2. Display State
+        System.out.println("Current Inventory:");
+        currentInventory.forEach((type, count) -> System.out.println(type + ": " + count));
 
-        // Create and start threads for each guest
-        Thread[] threads = new Thread[requests.length];
-        for (int i = 0; i < requests.length; i++) {
-            final String name = requests[i][0];
-            final String type = requests[i][1];
-
-            threads[i] = new Thread(() -> processBooking(name, type));
-            threads[i].start();
-        }
-
-        // Wait for all threads to finish (Join)
-        for (Thread t : threads) {
-            try { t.join(); } catch (InterruptedException e) { e.printStackTrace(); }
-        }
-
-        // Final Report
-        System.out.println("\nRemaining Inventory:");
-        inventory.forEach((type, count) -> System.out.println(type + ": " + count));
+        // 3. Shutdown: Save State
+        saveState();
     }
 
-    /**
-     * The Critical Section:
-     * The 'synchronized' keyword ensures only one thread enters this method
-     * at a time, preventing Race Conditions.
-     */
-    public static synchronized void processBooking(String name, String type) {
-        int available = inventory.getOrDefault(type, 0);
-
-        if (available > 0) {
-            // Simulate processing time
-            try { Thread.sleep(10); } catch (InterruptedException e) {}
-
-            // Update Inventory
-            inventory.put(type, available - 1);
-
-            // Assign Unique ID (Safe because of synchronization)
-            String roomID = type + "-" + (roomCounter++);
-
-            System.out.println("Booking confirmed for Guest: " + name + ", Room ID: " + roomID);
-        } else {
-            System.out.println("Booking failed for Guest: " + name + " (Sold Out)");
+    private static void saveState() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
+            InventoryData data = new InventoryData(currentInventory);
+            oos.writeObject(data);
+            System.out.println("Inventory saved successfully.");
+        } catch (IOException e) {
+            System.err.println("Error saving state: " + e.getMessage());
         }
+    }
+
+    private static void loadState() {
+        File file = new File(FILE_NAME);
+
+        // 4. Failure Tolerance: Handle missing file
+        if (!file.exists()) {
+            System.out.println("No valid inventory data found. Starting fresh.");
+            initializeDefaultInventory();
+            return;
+        }
+
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(FILE_NAME))) {
+            InventoryData loadedData = (InventoryData) ois.readObject();
+            currentInventory = loadedData.rooms;
+            System.out.println("System state recovered from " + FILE_NAME);
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Recovery failed (corrupted file). Starting fresh.");
+            initializeDefaultInventory();
+        }
+    }
+
+    private static void initializeDefaultInventory() {
+        currentInventory.put("Single", 5);
+        currentInventory.put("Double", 3);
+        currentInventory.put("Suite", 2);
     }
 }
