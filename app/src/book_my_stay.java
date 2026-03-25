@@ -1,89 +1,43 @@
-import java.util.*;
+import java.util.LinkedList;
+import java.util.Queue;
 
-public class book_my_stay{
+class BookingRequest {
+    String guestName;
+    String roomType;
 
-    // ------------------- Domain Model -------------------
-    static class Room {
-        private String type;
-        private int beds;
-        private int size;
-        private double price;
-
-        public Room(String type, int beds, int size, double price) {
-            this.type = type;
-            this.beds = beds;
-            this.size = size;
-            this.price = price;
-        }
-
-        public String getType() { return type; }
-        public int getBeds() { return beds; }
-        public int getSize() { return size; }
-        public double getPrice() { return price; }
+    public BookingRequest(String guestName, String roomType) {
+        this.guestName = guestName;
+        this.roomType = roomType;
     }
+}
 
-    // ------------------- Inventory -------------------
-    static class Inventory {
-        private Map<String, Integer> availability;
-
-        public Inventory(Map<String, Integer> availability) {
-            this.availability = availability;
-        }
-
-        public int getAvailableCount(String roomType) {
-            return availability.getOrDefault(roomType, 0);
-        }
-    }
-
-    // ------------------- Search Service -------------------
-    static class SearchService {
-        private Inventory inventory;
-        private Map<String, Room> roomCatalog;
-
-        public SearchService(Inventory inventory, Map<String, Room> roomCatalog) {
-            this.inventory = inventory;
-            this.roomCatalog = roomCatalog;
-        }
-
-        public void displayAvailableRooms() {
-            System.out.println("Room Search\n");
-
-            for (Map.Entry<String, Room> entry : roomCatalog.entrySet()) {
-                Room room = entry.getValue();
-                int available = inventory.getAvailableCount(room.getType());
-
-                // Validation: only show available rooms
-                if (available > 0) {
-                    System.out.println(room.getType() + " Room:");
-                    System.out.println("Beds: " + room.getBeds());
-                    System.out.println("Size: " + room.getSize() + " sqft");
-                    System.out.println("Price per night: " + room.getPrice());
-                    System.out.println("Available: " + available);
-                    System.out.println();
-                }
-            }
-        }
-    }
-
-    // ------------------- Main -------------------
+public class book_my_stay {
     public static void main(String[] args) {
+        // 1. Initialize the Queue
+        Queue<BookingRequest> bookingQueue = new LinkedList<>();
 
-        // Room Catalog
-        Map<String, Room> roomCatalog = new LinkedHashMap<>();
-        roomCatalog.put("Single", new Room("Single", 1, 250, 1500.0));
-        roomCatalog.put("Double", new Room("Double", 2, 400, 2500.0));
-        roomCatalog.put("Suite", new Room("Suite", 3, 750, 5000.0));
+        // 2. Add requests (Intake - Use Case 5)
+        bookingQueue.add(new BookingRequest("Abhi", "Single"));
+        bookingQueue.add(new BookingRequest("Subha", "Double"));
+        bookingQueue.add(new BookingRequest("Vanmathi", "Suite"));
 
-        // Inventory
-        Map<String, Integer> availability = new HashMap<>();
-        availability.put("Single", 5);
-        availability.put("Double", 3);
-        availability.put("Suite", 2);
+        System.out.println("--- Booking Request Queue Initialized ---");
 
-        Inventory inventory = new Inventory(availability);
+        // 3. Processing (FIFO Order)
+        processBookings(bookingQueue);
+    }
 
-        // Search
-        SearchService searchService = new SearchService(inventory, roomCatalog);
-        searchService.displayAvailableRooms();
+    public static void processBookings(Queue<BookingRequest> queue) {
+        System.out.println("\nBooking Request Queue");
+
+        // While there are people in line, process them one by one
+        while (!queue.isEmpty()) {
+            // .poll() removes the head of the queue (the first person who arrived)
+            BookingRequest current = queue.poll();
+            System.out.println("Processing booking for Guest: " + current.guestName +
+                    ", Room Type: " + current.roomType);
+        }
+
+        System.out.println("\nAll pending requests have been processed.");
     }
 }
