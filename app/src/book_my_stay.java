@@ -1,63 +1,53 @@
 import java.util.*;
 
-class BookingRequest {
-    String guestName;
-    String roomType;
+// Represents an individual Add-On Service
+class Service {
+    String name;
+    double cost;
 
-    public BookingRequest(String guestName, String roomType) {
-        this.guestName = guestName;
-        this.roomType = roomType;
+    public Service(String name, double cost) {
+        this.name = name;
+        this.cost = cost;
     }
 }
 
 public class book_my_stay {
-    // Inventory: Simple counter for available rooms
-    private static Map<String, Integer> inventory = new HashMap<>();
-
-    // Use Case 6: Map of Room Types to a SET of allocated Room IDs
-    // The Set ensures uniqueness (prevents double-booking)
-    private static Map<String, Set<String>> allocatedRooms = new HashMap<>();
+    // Use Case 7: Mapping Reservation ID (e.g., "Single-1") to a LIST of Services
+    private static Map<String, List<Service>> reservationAddOns = new HashMap<>();
 
     public static void main(String[] args) {
-        // Setup initial inventory
-        inventory.put("Single", 10);
-        inventory.put("Double", 5);
-        inventory.put("Suite", 2);
+        System.out.println("--- Use Case 7: Add-On Service Selection ---");
 
-        // Initialize the Request Queue (Use Case 5)
-        Queue<BookingRequest> bookingQueue = new LinkedList<>();
-        bookingQueue.add(new BookingRequest("Abhi", "Single"));
-        bookingQueue.add(new BookingRequest("Subha", "Single"));
-        bookingQueue.add(new BookingRequest("Vanmathi", "Suite"));
+        // 1. Simulate an existing Reservation ID from Use Case 6
+        String resId = "Single-1";
 
-        System.out.println("--- Room Allocation Processing ---");
-        processAndAllocate(bookingQueue);
+        // 2. Guest selects multiple services
+        addServiceToReservation(resId, new Service("Breakfast Buffet", 500.0));
+        addServiceToReservation(resId, new Service("Airport Pickup", 1000.0));
+
+        // 3. Calculate and Display
+        displayAddOnSummary(resId);
     }
 
-    public static void processAndAllocate(Queue<BookingRequest> queue) {
-        while (!queue.isEmpty()) {
-            BookingRequest request = queue.poll(); // FIFO retrieval
-            String type = request.roomType;
+    public static void addServiceToReservation(String resId, Service service) {
+        // Map and List Combination: computeIfAbsent creates the list if it doesn't exist
+        reservationAddOns.computeIfAbsent(resId, k -> new ArrayList<>()).add(service);
+        System.out.println("Service Added: " + service.name + " to " + resId);
+    }
 
-            // 1. Check Availability
-            if (inventory.containsKey(type) && inventory.get(type) > 0) {
+    public static void displayAddOnSummary(String resId) {
+        List<Service> services = reservationAddOns.get(resId);
+        double totalCost = 0;
 
-                // 2. Generate Unique Room ID
-                // Logic: Type name + current count allocated + 1
-                int currentAllocatedCount = allocatedRooms.getOrDefault(type, new HashSet<>()).size();
-                String roomID = type + "-" + (currentAllocatedCount + 1);
+        System.out.println("\n--- Add-On Service Selection ---");
+        System.out.println("Reservation ID: " + resId);
 
-                // 3. Record in Set to prevent reuse (Atomic Logic)
-                allocatedRooms.computeIfAbsent(type, k -> new HashSet<>()).add(roomID);
-
-                // 4. Immediate Inventory Synchronization
-                inventory.put(type, inventory.get(type) - 1);
-
-                // 5. Confirm Reservation
-                System.out.println("Booking confirmed for Guest: " + request.guestName + ", Room ID: " + roomID);
-            } else {
-                System.out.println("Booking FAILED for Guest: " + request.guestName + " (No " + type + " rooms left)");
+        if (services != null) {
+            for (Service s : services) {
+                totalCost += s.cost;
             }
         }
+
+        System.out.println("Total Add-On Cost: " + totalCost);
     }
 }
